@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🛒 Lista de Compras — Aprimorada</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji'; }
+    .fade-in { animation: fadeIn .25s ease-out; }
+    @keyframes fadeIn { from{opacity:0; transform: translateY(6px)} to{opacity:1; transform: translateY(0)} }
+    .strike { text-decoration: line-through; opacity: .6; }
+    .scroll-smooth { scroll-behavior: smooth; }
+    .tap-target { -webkit-tap-highlight-color: transparent; }
+    
+    /* Fix para o modal */
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      animation: modalIn 0.2s ease-out;
+    }
+    
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body class="scroll-smooth bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-950 min-h-screen text-slate-900 dark:text-slate-100">
+  <div class="max-w-xl mx-auto px-4 py-6">
+    <!-- Cabeçalho -->
+    <header class="flex items-center justify-between gap-3 mb-5">
+      <div>
+        <h1 class="text-3xl font-bold leading-tight">🛒 Lista de Compras</h1>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Rápida, organizada e com salvamento automático.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="themeBtn" class="tap-target rounded-xl px-3 py-2 border border-slate-300/70 dark:border-slate-700 hover:bg-white/60 dark:hover:bg-white/5 transition text-sm" title="Alternar tema">🌙</button>
+        <button id="helpBtn" class="tap-target rounded-xl px-3 py-2 border border-slate-300/70 dark:border-slate-700 hover:bg-white/60 dark:hover:bg-white/5 transition text-sm" title="Atalhos e dicas">❓</button>
+      </div>
+    </header>
+
+    <!-- Cartão de entrada -->
+    <section class="bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-2xl shadow ring-1 ring-black/5 dark:ring-white/10 p-4 mb-4">
+      <div class="grid grid-cols-12 gap-2">
+        <input id="itemInput" class="col-span-7 md:col-span-6 px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Adicionar item (ex.: Leite)" />
+        <input id="qtyInput" type="number" min="1" value="1" class="col-span-2 md:col-span-2 px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center" title="Quantidade" />
+        <input id="priceInput" type="number" min="0" step="0.01" class="col-span-3 md:col-span-2 px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" placeholder="Preço" title="Preço (opcional)" />
+        <select id="catInput" class="col-span-6 md:col-span-3 px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <option value="alimentos">🍎 Alimentos</option>
+          <option value="limpeza">🧽 Limpeza</option>
+          <option value="higiene">🧴 Higiene</option>
+          <option value="bebidas">🥤 Bebidas</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+        <input id="noteInput" class="col-span-6 md:col-span-6 px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" placeholder="Observação (marca, sabor, etc.)" />
+        <button id="addBtn" class="col-span-12 md:col-span-3 bg-blue-600 hover:bg-blue-700 active:scale-[.99] text-white font-semibold rounded-xl px-4 py-3 transition shadow-sm">➕ Adicionar</button>
+      </div>
+
+      <div class="mt-3 flex flex-wrap gap-2 text-sm">
+        <button data-q="Leite" class="quick px-3 py-2 rounded-lg bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-700">🥛 Leite</button>
+        <button data-q="Pão" class="quick px-3 py-2 rounded-lg bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-700">🍞 Pão</button>
+        <button data-q="Ovos" class="quick px-3 py-2 rounded-lg bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-700">🥚 Ovos</button>
+        <button data-q="Arroz" class="quick px-3 py-2 rounded-lg bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-700">🍚 Arroz</button>
+        <button data-q="Feijão" class="quick px-3 py-2 rounded-lg bg-green-50 dark:bg-emerald-900/40 border border-green-200 dark:border-emerald-700">🫘 Feijão</button>
+        <button data-q="Detergente" data-cat="limpeza" class="quick px-3 py-2 rounded-lg bg-blue-50 dark:bg-sky-900/40 border border-blue-200 dark:border-sky-700">🧴 Detergente</button>
+      </div>
+    </section>
+
+    <!-- Barra utilitária -->
+    <section class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+      <div class="flex-1 bg-white/80 dark:bg-slate-900/60 rounded-xl ring-1 ring-black/5 dark:ring-white/10 p-2">
+        <input id="searchInput" class="w-full bg-transparent px-3 py-2 focus:outline-none" placeholder="🔎 Buscar por nome, nota ou categoria... (Ctrl+F)" />
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="shareBtn" class="tap-target rounded-xl px-3 py-2 bg-green-600 hover:bg-green-700 text-white">📱 Compartilhar</button>
+        <button id="importWhatsBtn" class="tap-target rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-700 hover:bg-white/60 dark:hover:bg-white/5 transition">💬 Importar do Whats</button>
+        <button id="exportBtn" class="tap-target rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-700">⬇️ Exportar</button>
+        <label class="tap-target rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-700 cursor-pointer">⬆️ Importar
+          <input id="importInput" type="file" accept="application/json" class="hidden" />
+        </label>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-3 gap-3 mb-4">
+      <div class="bg-white/80 dark:bg-slate-900/60 rounded-xl ring-1 ring-black/5 dark:ring-white/10 p-3 text-center">
+        <div id="kpiTotal" class="text-2xl font-bold">0</div>
+        <div class="text-xs text-slate-600 dark:text-slate-400">Total</div>
+      </div>
+      <div class="bg-white/80 dark:bg-slate-900/60 rounded-xl ring-1 ring-black/5 dark:ring-white/10 p-3 text-center">
+        <div id="kpiDone" class="text-2xl font-bold text-emerald-600">0</div>
+        <div class="text-xs text-slate-600 dark:text-slate-400">Comprados</div>
+      </div>
+      <div class="bg-white/80 dark:bg-slate-900/60 rounded-xl ring-1 ring-black/5 dark:ring-white/10 p-3 text-center">
+        <div id="kpiRemain" class="text-2xl font-bold text-orange-600">0</div>
+        <div class="text-xs text-slate-600 dark:text-slate-400">Restantes</div>
+      </div>
+    </section>
+
+    <!-- Orçamento -->
+    <section class="bg-white/80 dark:bg-slate-900/60 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 p-4 mb-4">
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+        <div class="flex-1">
+          <label for="budgetInput" class="block text-sm text-slate-600 dark:text-slate-400">Orçamento (opcional)</label>
+          <input id="budgetInput" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" placeholder="Ex.: 250,00" />
+        </div>
+        <div class="flex-1">
+          <div class="text-sm text-slate-600 dark:text-slate-400">Previsto (itens restantes)</div>
+          <div id="sumRemain" class="text-2xl font-semibold">R$ 0,00</div>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm text-slate-600 dark:text-slate-400">Diferença vs orçamento</div>
+          <div id="sumDiff" class="text-2xl font-semibold">R$ 0,00</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    <section class="bg-white/80 dark:bg-slate-900/60 rounded-2xl shadow ring-1 ring-black/5 dark:ring-white/10 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">Sua Lista</h2>
+        <div class="flex gap-2">
+          <button id="clearDoneBtn" class="tap-target text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700">Limpar comprados</button>
+          <button id="clearAllBtn" class="tap-target text-sm px-3 py-2 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-400">Limpar tudo</button>
+        </div>
+      </div>
+
+      <!-- Agrupado por categoria -->
+      <div id="listContainer" class="space-y-5"></div>
+      <p id="emptyMsg" class="text-center text-slate-500 py-8">📝 Adicione itens à sua lista!</p>
+    </section>
+
+    <footer class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+      Dicas: Enter adiciona, Ctrl+K busca, clique no preço/quantidade para editar, arraste para reordenar.
+    </footer>
+  </div>
+
+  <!-- Modal Importar do Whats - CORRIGIDO -->
+  <div id="whatsModal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-overlay absolute inset-0" data-close></div>
+      <div class="modal-content relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full p-6 ring-1 ring-black/5 dark:ring-white/10">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Importar lista do WhatsApp</h3>
+          <button class="text-slate-500 hover:text-slate-700 text-xl" data-close>✕</button>
+        </div>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+          Cole aqui a mensagem recebida (do WhatsApp Web ou celular).
+        </p>
+        <textarea id="whatsText" class="w-full h-52 p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 mb-4 resize-none" placeholder="🛒 Minha Lista de Compras
+
+📝 PARA COMPRAR:
+• Leite (2x) — R$ 7,49
+• Arroz (1x)
+• Pão de forma
+
+✅ COMPRADOS:
+• Detergente (1x)"></textarea>
+        <div class="flex justify-end gap-3">
+          <button class="rounded-xl px-4 py-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800" data-close>Cancelar</button>
+          <button id="importWhatsGo" class="rounded-xl px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white">Importar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="itemTpl">
+    <div class="item fade-in tap-target group flex items-start gap-3 p-3 bg-slate-50/80 dark:bg-white/5 rounded-xl border border-slate-200/70 dark:border-slate-700" draggable="true">
+      <button data-action="toggle" class="mt-1 w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0"> </button>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <input data-field="name" class="name w-full bg-transparent font-medium outline-none border-none" />
+          <span data-field="category" class="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-slate-700"></span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <div class="flex items-center gap-1">
+            <button data-action="decQty" class="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-700">−</button>
+            <input data-field="quantity" type="number" min="1" class="w-14 text-center bg-transparent border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1" />
+            <button data-action="incQty" class="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-700">+</button>
+          </div>
+          <div class="flex items-center gap-1">
+            <span>Preço:</span>
+            <input data-field="price" type="number" min="0" step="0.01" class="w-24 text-right bg-transparent border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1" />
+            <span class="opacity-70">R$</span>
+          </div>
+          <input data-field="note" class="flex-1 min-w-[120px] bg-transparent border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1" placeholder="Observação" />
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <div class="text-right whitespace-nowrap">
+          <div class="text-xs opacity-60">Subtotal</div>
+          <div data-field="subtotal" class="font-semibold">R$ 0,00</div>
+        </div>
+        <button data-action="remove" class="hidden group-hover:inline-flex text-rose-600 hover:text-rose-700">✕</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+  // ===== Estado & Persistência =====
+  const STORE_KEY = 'grocery_items_v2';
+  const PREFS_KEY = 'grocery_prefs_v1';
+  /** @type {Array<{id:number,name:string,quantity:number,category:string,checked:boolean,price:number,note:string,ts:number,order:number}>} */
+  let items = [];
+  let nextId = 1;
+  const prefs = { theme: 'auto', budget: 0 };
+
+  // ===== Util =====
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const money = n => `R$ ${(+n||0).toFixed(2).replace('.', ',')}`;
+  const by = f => (a,b)=> f(a) > f(b) ? 1 : f(a) < f(b) ? -1 : 0;
+
+  function save(){
+    localStorage.setItem(STORE_KEY, JSON.stringify(items));
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      items = list.map((it,i)=>({
+        id: it.id ?? (i+1),
+        name: it.name ?? '',
+        quantity: Math.max(1, Number(it.quantity||1)),
+        category: it.category || 'outros',
+        checked: !!it.checked,
+        price: Number(it.price||0),
+        note: it.note || '',
+        ts: Number(it.ts||Date.now()),
+        order: Number(it.order ?? i)
+      }));
+      nextId = items.reduce((m,it)=>Math.max(m,it.id),0)+1;
+    }catch{ items=[] }
+
+    try{
+      const p = JSON.parse(localStorage.getItem(PREFS_KEY)||'{}');
+      if(p.theme) prefs.theme = p.theme;
+      if(typeof p.budget!== 'undefined') prefs.budget = Number(p.budget)||0;
+    }catch{}
+  }
+
+  // ===== Tema =====
+  function applyTheme(){
+    const sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = prefs.theme === 'dark' || (prefs.theme==='auto' && sysDark);
+    document.documentElement.classList.toggle('dark', isDark);
+    $('#themeBtn').textContent = isDark ? '☀️' : '🌙';
+  }
+
+  // ===== Render =====
+  function render(){
+    const q = ($('#searchInput')?.value||'').trim().toLowerCase();
+    const filtered = q ? items.filter(it =>
+      it.name.toLowerCase().includes(q) ||
+      it.note.toLowerCase().includes(q) ||
+      it.category.toLowerCase().includes(q)
+    ) : items.slice();
+
+    const groups = {};
+    for(const it of filtered){
+      if(!groups[it.category]) groups[it.category] = [];
+      groups[it.category].push(it);
+    }
+    const orderCats = ['alimentos','limpeza','higiene','bebidas','outros'];
+
+    const cont = $('#listContainer');
+    if(cont){
+      cont.innerHTML = '';
+      let shownCount = 0;
+      for(const cat of orderCats){
+        const list = (groups[cat]||[]).sort((a,b)=> (a.checked-b.checked) || by(x=>x.order)(a,b));
+        if(list.length===0) continue;
+        shownCount += list.length;
+
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-slate-800 dark:text-slate-100">${labelCat(cat)}</h3>
+            <button class="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-700" data-collapse>Recolher</button>
+          </div>
+          <div class="space-y-2" data-list></div>
+        `;
+        const ul = $('[data-list]', wrap);
+        for(const it of list){ ul.appendChild(renderItem(it)); }
+        cont.appendChild(wrap);
+
+        $('[data-collapse]', wrap).addEventListener('click', (e)=>{
+          const btn = e.currentTarget;
+          const box = $('[data-list]', wrap);
+          const hidden = box.classList.toggle('hidden');
+          btn.textContent = hidden ? 'Expandir' : 'Recolher';
+        });
+      }
+      $('#emptyMsg')?.classList.toggle('hidden', shownCount>0);
+    }
+
+    const total = items.length;
+    const done = items.filter(i=>i.checked).length;
+    const remain = total - done;
+    $('#kpiTotal') && ($('#kpiTotal').textContent = total);
+    $('#kpiDone') && ($('#kpiDone').textContent = done);
+    $('#kpiRemain') && ($('#kpiRemain').textContent = remain);
+
+    const sumRemain = items.filter(i=>!i.checked).reduce((s,i)=> s + (Number(i.price)||0) * (Number(i.quantity)||1), 0);
+    $('#sumRemain') && ($('#sumRemain').textContent = money(sumRemain));
+    const budget = Number($('#budgetInput')?.value||0);
+    const diff = budget - sumRemain;
+    const elDiff = $('#sumDiff');
+    if(elDiff){
+      elDiff.textContent = money(diff);
+      elDiff.classList.toggle('text-emerald-600', diff>=0);
+      elDiff.classList.toggle('text-rose-600', diff<0);
+    }
+    save();
+  }
+
+  function renderItem(it){
+    const tpl = $('#itemTpl');
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    node.dataset.id = it.id;
+
+    const btnToggle = node.querySelector('[data-action="toggle"]');
+    const btnRemove = node.querySelector('[data-action="remove"]');
+    const btnInc = node.querySelector('[data-action="incQty"]');
+    const btnDec = node.querySelector('[data-action="decQty"]');
+
+    const fName = node.querySelector('[data-field="name"]');
+    const fQty = node.querySelector('[data-field="quantity"]');
+    const fPrice = node.querySelector('[data-field="price"]');
+    const fNote = node.querySelector('[data-field="note"]');
+    const fCat = node.querySelector('[data-field="category"]');
+    const fSub = node.querySelector('[data-field="subtotal"]');
+
+    fName.value = it.name; fQty.value = it.quantity; fPrice.value = it.price || '';
+    fNote.value = it.note; fCat.textContent = labelCat(it.category);
+    fSub.textContent = money((Number(it.price)||0) * (Number(it.quantity)||1));
+
+    if(it.checked){ node.classList.add('opacity-70'); fName.classList.add('strike'); }
+    btnToggle.innerHTML = it.checked ? '<span class="text-emerald-600">✓</span>' : '';
+
+    btnToggle.addEventListener('click', ()=>{ it.checked = !it.checked; render(); });
+    btnRemove.addEventListener('click', ()=>{ removeItem(it.id); });
+    btnInc.addEventListener('click', ()=>{ it.quantity = (Number(it.quantity)||1)+1; render(); });
+    btnDec.addEventListener('click', ()=>{ it.quantity = Math.max(1, (Number(it.quantity)||1)-1); render(); });
+
+    fName.addEventListener('change', e=>{ it.name = e.target.value.trim(); render(); });
+    fQty.addEventListener('change', e=>{ it.quantity = Math.max(1, Number(e.target.value)||1); render(); });
+    fPrice.addEventListener('change', e=>{ it.price = Math.max(0, Number(e.target.value)||0); render(); });
+    fNote.addEventListener('change', e=>{ it.note = e.target.value; save(); });
+
+    node.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', String(it.id));
+      e.dataTransfer.effectAllowed = 'move';
+      node.classList.add('opacity-50');
+    });
+    node.addEventListener('dragend', ()=> node.classList.remove('opacity-50'));
+    node.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    node.addEventListener('drop', e=>{
+      e.preventDefault();
+      const fromId = Number(e.dataTransfer.getData('text/plain'));
+      const toId = Number(node.dataset.id);
+      reorder(fromId, toId);
+    });
+    return node;
+  }
+
+  function reorder(fromId, toId){
+    if(fromId===toId) return;
+    const a = items.find(i=>i.id===fromId);
+    const b = items.find(i=>i.id===toId);
+    if(!a||!b) return;
+    const tmp = a.order; a.order = b.order; b.order = tmp;
+    render();
+  }
+
+  function labelCat(cat){
+    switch(cat){
+      case 'alimentos': return '🍎 Alimentos';
+      case 'limpeza': return '🧽 Limpeza';
+      case 'higiene': return '🧴 Higiene';
+      case 'bebidas': return '🥤 Bebidas';
+      default: return '📦 Outros';
+    }
+  }
+
+  // ===== CRUD =====
+  function addItem(){
+    const name = $('#itemInput').value.trim();
+    const qty = Math.max(1, Number($('#qtyInput').value)||1);
+    const price = Math.max(0, Number($('#priceInput').value)||0);
+    const cat = $('#catInput').value;
+    const note = $('#noteInput').value.trim();
+    if(!name) { $('#itemInput').focus(); return; }
+
+    const same = items.find(i=> i.name.toLowerCase()===name.toLowerCase() && i.category===cat && !i.checked);
+    if(same){
+      same.quantity += qty;
+      if(price>0) same.price = price;
+      if(note) same.note = note;
+    } else {
+      items.push({
+        id: nextId++, name, quantity: qty, category: cat, checked: false,
+        price, note, ts: Date.now(), order: items.length ? Math.max(...items.map(i=>i.order))+1 : 0
+      });
+    }
+    $('#itemInput').value=''; $('#qtyInput').value='1'; $('#priceInput').value=''; $('#noteInput').value='';
+    $('#itemInput').focus(); render();
+  }
+  function removeItem(id){ items = items.filter(i=>i.id!==id); render(); }
+  function clearDone(){ if(items.some(i=>i.checked) && confirm('Remover todos os itens marcados como comprados?')){ items = items.filter(i=>!i.checked); render(); } }
+  function clearAll(){ if(items.length && confirm('Limpar toda a lista?')){ items = []; render(); } }
+
+  // ===== Compartilhar (Whats/Whats Web) - CORRIGIDO =====
+  function share(){
+    if(items.length===0){ alert('Adicione itens à lista primeiro!'); return; }
+    const toBuy = items.filter(i=>!i.checked);
+    const bought = items.filter(i=>i.checked);
+    
+    // Usar quebras de linha reais, não literais
+    let txt = '🛒 Minha Lista de Compras\n\n';
+    
+    if(toBuy.length){
+      txt += '📝 PARA COMPRAR:\n';
+      for(const it of toBuy){
+        const p = it.price>0? ` — R$ ${(it.price).toFixed(2).replace('.', ',')}`: '';
+        txt += `• ${it.name} (${it.quantity}x)${p}\n`;
+      }
+      txt += '\n';
+    }
+    
+    if(bought.length){
+      txt += '✅ COMPRADOS:\n';
+      for(const it of bought){ 
+        txt += `• ${it.name} (${it.quantity}x)\n`; 
+      }
+    }
+    
+    console.log('Texto para compartilhar:', txt);
+    
+    // Encoding correto para WhatsApp
+    const url = `https://wa.me/?text=${encodeURIComponent(txt)}`;
+    window.open(url, '_blank');
+  }
+
+  // ===== Exportar / Importar JSON =====
+  function exportJSON(){
+    const data = JSON.stringify({ items, prefs }, null, 2);
+    const blob = new Blob([data], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lista_de_compras.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importJSON(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(Array.isArray(data.items)) items = data.items; else if(Array.isArray(data)) items = data;
+        if(data.prefs) { Object.assign(prefs, data.prefs); }
+        $('#budgetInput').value = prefs.budget || '';
+        render();
+      }catch(e){ alert('Arquivo inválido'); }
+    };
+    reader.readAsText(file);
+  }
+
+  // ===== Importar do WhatsApp (parser robusto) - CORRIGIDO =====
+  function setupWhatsModal() {
+    const modal = $('#whatsModal');
+    const txt = $('#whatsText');
+    const openBtn = $('#importWhatsBtn');
+    const goBtn = $('#importWhatsGo');
+    const closeElements = $$('[data-close]', modal);
+
+    if (!modal || !txt || !openBtn || !goBtn) {
+      console.error('Elementos do modal não encontrados');
+      return;
+    }
+
+    function openModal() {
+      console.log('Abrindo modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => txt.focus(), 100);
+    }
+
+    function closeModal() {
+      console.log('Fechando modal');
+      modal.classList.add('hidden');
+    }
+
+    // Event listeners
+    openBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Botão importar clicado');
+      openModal();
+    });
+
+    goBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const content = (txt.value || '').trim();
+      if (!content) {
+        alert('Cole o texto da mensagem primeiro.');
+        return;
+      }
+      importFromWhatsText(content);
+      txt.value = '';
+      closeModal();
+    });
+
+    closeElements.forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal();
+      });
+    });
+
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  }
+
+  // Teste rápido com seu texto específico
+  function testUserText() {
+    const testText = `🛒 Minha Lista de Compras\n\n📝 PARA COMPRAR:\n• Leite (1x)\n• Pão (1x)\n• Ovos (1x)\n• Detergente (2x)\n• Sabão Líquido (1x)\n• Amaciante (1x)\n• Biscoito (3x)\n• Batata (8x)\n• Chocolate (1x)\n• iogurte grego (1x)\n• Iogurte tom (1x)\n• Queijo (1x)\n• Manteiga Grande (1x)\n• Cenoura (1x)\n• Frango (4x)\n• Isca De Frango (1x)\n• Shoyo (2x)\n• Papel Toalha (2x)\n• Macarrão Pene (2x)\n• Extrato De Tomate (2x)\n• Creme De Leite (2x)\n• Café (1x)\n• Macarrão para sopa (1x)\n• Uva (1x)\n• Maçã (1x)\n• Banana (1x)\n• Mamão (1x)`;
+    return importFromWhatsText(testText);
+  }
+  
+  // Versão super robusta do parser
+  function importFromWhatsText(text) {
+    console.log('=== INICIANDO IMPORTAÇÃO ===');
+    console.log('Texto bruto (primeiros 300 chars):', text.substring(0, 300));
+    console.log('Comprimento total:', text.length);
+    
+    // Múltiplas tentativas de correção
+    let processedText = text;
+    
+    // 1. Corrigir quebras de linha literais
+    if (processedText.includes('\\n')) {
+      processedText = processedText.replace(/\\n/g, '\n');
+      console.log('✓ Convertidas quebras \\n literais');
+    }
+    
+    // 2. Remover caracteres invisíveis/estranhos
+    processedText = processedText.replace(/\r/g, '');
+    
+    // 3. Separar em linhas
+    const lines = processedText.split('\n');
+    console.log('Total de linhas encontradas:', lines.length);
+    
+    // Debug: mostrar todas as linhas
+    lines.forEach((line, i) => {
+      if (line.trim()) {
+        console.log(`Linha ${i+1}: [${line.trim()}]`);
+      }
+    });
+    
+    let itemsAdded = 0;
+    
+    function detectCategory(name) {
+      const lowerName = name.toLowerCase();
+      
+      if (/detergente|sabão|amaciante|papel toalha/i.test(lowerName)) {
+        return 'limpeza';
+      }
+      if (/café|iogurte|refrigerante|suco/i.test(lowerName)) {
+        return 'bebidas';
+      }
+      return 'alimentos';
+    }
+    
+    function extractQuantity(text) {
+      // Buscar padrões como (1x), (2x), etc.
+      const match = text.match(/\((\d+)x?\)/i);
+      return match ? parseInt(match[1]) : 1;
+    }
+    
+    function cleanItemName(text) {
+      // Remove bullet points e quantidade
+      return text
+        .replace(/^[•\-\u2022\*\+]\s*/, '') // Remove bullet points
+        .replace(/\(\d+x?\)/i, '') // Remove (1x), (2x), etc.
+        .replace(/[—\-]\s*(?:r\$)?\s*[0-9.,]+$/i, '') // Remove preços
+        .trim();
+    }
+    
+    // Processar cada linha
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (!line) continue;
+      
+      // Detectar se é um item (começa com bullet point OU tem formato de item)
+      const isBulletItem = /^[•\-\u2022\*\+]\s*.+/.test(line);
+      const hasQuantity = /\(\d+x?\)/i.test(line);
+      const looksLikeItem = !line.includes(':') && 
+                           line.length > 1 && 
+                           !line.toLowerCase().includes('lista') &&
+                           !line.toLowerCase().includes('compra') &&
+                           (hasQuantity || isBulletItem);
+      
+      console.log(`Analisando linha ${i+1}: "${line}"`);
+      console.log(`  - É bullet item: ${isBulletItem}`);
+      console.log(`  - Tem quantidade: ${hasQuantity}`);
+      console.log(`  - Parece item: ${looksLikeItem}`);
+      
+      if (isBulletItem || looksLikeItem) {
+        const quantity = extractQuantity(line);
+        const name = cleanItemName(line);
+        const category = detectCategory(name);
+        
+        console.log(`  - Nome extraído: "${name}"`);
+        console.log(`  - Quantidade: ${quantity}`);
+        console.log(`  - Categoria: ${category}`);
+        
+        if (name && name.length > 0) {
+          items.push({
+            id: nextId++,
+            name: name,
+            quantity: quantity,
+            category: category,
+            checked: false,
+            price: 0,
+            note: '',
+            ts: Date.now(),
+            order: items.length ? Math.max(...items.map(i => i.order)) + 1 : 0
+          });
+          
+          itemsAdded++;
+          console.log(`  ✓ Item adicionado: ${name} (${quantity}x)`);
+        } else {
+          console.log(`  ✗ Nome inválido, item ignorado`);
+        }
+      }
+    }
+    
+    console.log('=== RESULTADO FINAL ===');
+    console.log(`Total de itens importados: ${itemsAdded}`);
+    
+    if (itemsAdded > 0) {
+      render();
+      alert(`✅ ${itemsAdded} itens importados com sucesso!\n\nItens adicionados:\n${items.slice(-itemsAdded).map(item => `• ${item.name} (${item.quantity}x)`).join('\n').substring(0, 200)}...`);
+    } else {
+      // Mostrar debug no alert
+      const debugInfo = `❌ Nenhum item encontrado!\n\nDebug:\n• Total de linhas: ${lines.length}\n• Primeira linha: "${lines[0] || 'vazia'}"\n• Última linha com conteúdo: "${lines.filter(l => l.trim()).pop() || 'nenhuma'}"`;
+      alert(debugInfo);
+      
+      // Oferecer teste automático
+      if (confirm('Quer testar com um texto de exemplo que sabemos que funciona?')) {
+        testUserText();
+      }
+    }
+    
+    return itemsAdded;
+  }
+
+  // ===== Eventos globais =====
+  function bind(){
+    $('#addBtn').addEventListener('click', addItem);
+    $('#itemInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+    $('#qtyInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+    $('#priceInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+    $('#noteInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+
+    $('#helpBtn').addEventListener('click', ()=> alert(
+      'Atalhos:\\n• Enter: adicionar item\\n• Ctrl+K: foco na busca\\n• Clique nos campos para editar\\n• Arraste um item para reordenar\\n• Exportar/Importar para backup\\n• 💬 Importar do Whats para colar uma lista recebida.'
+    ));
+
+    $('#clearDoneBtn').addEventListener('click', clearDone);
+    $('#clearAllBtn').addEventListener('click', clearAll);
+    $('#shareBtn').addEventListener('click', share);
+    $('#exportBtn').addEventListener('click', exportJSON);
+    $('#importInput').addEventListener('change', e=>{ if(e.target.files[0]) importJSON(e.target.files[0]); });
+
+    $('#searchInput').addEventListener('input', render);
+
+    $('#themeBtn').addEventListener('click', ()=>{
+      prefs.theme = (prefs.theme==='dark') ? 'light' : (prefs.theme==='light' ? 'auto' : 'dark');
+      applyTheme(); save();
+    });
+
+    $('#budgetInput').addEventListener('change', e=>{ prefs.budget = Number(e.target.value)||0; save(); render(); });
+
+    $$('.quick').forEach(b=> b.addEventListener('click', ()=>{
+      const name = b.dataset.q; const cat=b.dataset.cat || 'alimentos';
+      $('#itemInput').value = name; $('#catInput').value = cat; $('#qtyInput').value = 1; addItem();
+    }));
+
+    window.addEventListener('keydown', e=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('#searchInput').focus(); }
+    });
+
+    if(window.matchMedia){
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      mq.addEventListener?.('change', ()=> applyTheme());
+    }
+
+    // Setup modal do WhatsApp
+    setupWhatsModal();
+  }
+
+  // ===== Boot =====
+  load();
+  document.addEventListener('DOMContentLoaded', ()=>{
+    $('#budgetInput').value = prefs.budget || '';
+    applyTheme();
+    bind();
+    render();
+    $('#itemInput').focus();
+  });
+  </script>
+</body>
+</html>
